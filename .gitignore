@@ -1,0 +1,5 @@
+ssh-keys/
+azure.auto.tfvars
+*.tfstate*
+.terraform
+*.lock.hcl

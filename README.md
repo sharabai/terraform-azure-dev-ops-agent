@@ -6,6 +6,8 @@ Terraform automation for provisioning azure Linux VM and installing Azure DevOps
 
 ## Instruction
 
+Aftre git cloning the project, you should place your public ssh key named 'terraform-azure.pub' in ssh-keys/.
+
 Run `terraform init && terraform apply` to provision resources
 
 ## License
