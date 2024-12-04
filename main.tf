@@ -1,6 +1,20 @@
+terraform {
+  required_providers {
+    azuredevops = {
+      source = "microsoft/azuredevops"
+      version = "~>1.4.0"
+    }
+  }
+}
+
 provider "azurerm" {
   features {}
   subscription_id = var.subscription
+}
+
+provider "azuredevops" {
+  org_service_url = "https://dev.azure.com/${var.org}"
+  personal_access_token = var.pat
 }
 
 resource "azurerm_resource_group" "agent" {
@@ -10,7 +24,7 @@ resource "azurerm_resource_group" "agent" {
 
 resource "azurerm_virtual_network" "agent" {
   name                = "${var.prefix}-network"
-  address_space       = ["10.0.0.0/16"]
+  address_space       = ["10.0.0.0/22"]
   location            = azurerm_resource_group.agent.location
   resource_group_name = azurerm_resource_group.agent.name
 }
@@ -26,7 +40,7 @@ resource "azurerm_public_ip" "pip" {
   name                = "${var.prefix}-pip"
   resource_group_name = azurerm_resource_group.agent.name
   location            = azurerm_resource_group.agent.location
-  allocation_method   = "Dynamic"
+  allocation_method   = "Static"
 }
 
 resource "azurerm_network_interface" "agent" {
@@ -97,4 +111,26 @@ resource "azurerm_linux_virtual_machine" "agent" {
     POOL = var.pool
     ORG  = var.org
   }))
+}
+
+data "azuredevops_project" "example" {
+  name = var.devops_project_name
+}
+
+resource "azuredevops_variable_group" "terraform_outputs" {
+  project_id = data.azuredevops_project.example.id
+  name = "Terraform Outputs"
+  allow_access = true
+  variable {
+    name = "resourceGroup"
+    value = azurerm_resource_group.agent.name
+  }
+  variable {
+    name = "clusterName"
+    value = var.aks_cluster_name
+  }
+  variable {
+    name = "subscription"
+    value = var.subscription
+  }
 }

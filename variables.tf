@@ -5,3 +5,5 @@ variable "user" {}
 variable "org" {}
 variable "pool" {}
 variable "subscription" {}
+variable "devops_project_name" {}
+variable "aks_cluster_name" {}
