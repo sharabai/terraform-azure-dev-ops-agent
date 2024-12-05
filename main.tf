@@ -82,7 +82,7 @@ resource "azurerm_linux_virtual_machine" "agent" {
   name                = "${var.prefix}-vm"
   resource_group_name = azurerm_resource_group.agent.name
   location            = azurerm_resource_group.agent.location
-  size                = "Standard_A1_v2"
+  size                =  local.size
   admin_username      = var.user
   network_interface_ids = [
     azurerm_network_interface.agent.id,
@@ -132,5 +132,58 @@ resource "azuredevops_variable_group" "terraform_outputs" {
   variable {
     name = "subscription"
     value = var.subscription
+  }
+}
+
+resource "azurerm_kubernetes_cluster" "example" {
+  name                = var.aks_cluster_name
+  location            = azurerm_resource_group.agent.location
+  resource_group_name = azurerm_resource_group.agent.name
+  dns_prefix          = "example"
+
+  default_node_pool {
+    name       = "default"
+    node_count = 1
+    vm_size    = local.node_size
+    auto_scaling_enabled = true
+    max_count = var.profile == "dev" ? 1 : var.node_max_count
+    min_count = var.profile == "dev" ? 1 : var.node_min_count
+  }
+
+  identity {
+    type = "SystemAssigned"
+  }
+
+  tags = {
+    Environment = var.profile
+  }
+
+  lifecycle {
+    ignore_changes = [ default_node_pool ]
+  }
+}
+
+output "client_certificate" {
+  value     = azurerm_kubernetes_cluster.example.kube_config[0].client_certificate
+  sensitive = true
+}
+
+output "kube_config" {
+  value = azurerm_kubernetes_cluster.example.kube_config_raw
+  sensitive = true
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "prod" {
+  count = var.profile == "prod" ? 1 : 0
+
+  name                  = "internal"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.example.id
+  vm_size               = "Standard_DS2_v2"
+  auto_scaling_enabled = true
+  min_count = var.node_min_count
+  max_count = var.node_max_count
+
+  tags = {
+    Environment = var.profile
   }
 }
