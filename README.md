@@ -8,7 +8,9 @@ Terraform automation for provisioning azure Linux VM and installing Azure DevOps
 
 Aftre git cloning the project, you should place your public ssh key named 'terraform-azure.pub' in ssh-keys/. You also need to be authenticated with azure. In this project azure I used azure cli athentication method. Specifically `azure login` after installing azure cli. You should provide vars required. Example vars are [here](./azure.auto.tfvars.example).
 
-Run `terraform init && terraform apply` to provision resources
+Run `terraform init && terraform apply` to provision resources.
+You can run terraform apply in two profiles: dev and prod. Dev is the default one.
+Run `terraform apply -var="profile=prod"` for prod profile.
 
 ## License
 
