@@ -20,7 +20,7 @@ variable "profile" {
 }
 
 locals {
-    size = var.profile == "dev" ? "Standard_A1_v2" : "Standard_D2_v2"
+    size = var.profile == "dev" ? "Standard_B1s" : "Standard_D2_v2"
     node_size = var.profile == "dev" ? "Standard_A2_v2" : "Standard_D2_v2"
 }
 

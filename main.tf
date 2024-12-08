@@ -41,6 +41,10 @@ resource "azurerm_public_ip" "pip" {
   resource_group_name = azurerm_resource_group.agent.name
   location            = azurerm_resource_group.agent.location
   allocation_method   = "Static"
+
+  lifecycle {
+    create_before_destroy = true
+  }
 }
 
 resource "azurerm_network_interface" "agent" {
@@ -82,7 +86,7 @@ resource "azurerm_linux_virtual_machine" "agent" {
   name                = "${var.prefix}-vm"
   resource_group_name = azurerm_resource_group.agent.name
   location            = azurerm_resource_group.agent.location
-  size                =  local.size
+  size                = local.size
   admin_username      = var.user
   network_interface_ids = [
     azurerm_network_interface.agent.id,
