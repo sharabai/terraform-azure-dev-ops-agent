@@ -115,6 +115,12 @@ resource "azurerm_linux_virtual_machine" "agent" {
     POOL = var.pool
     ORG  = var.org
   }))
+
+  lifecycle {
+    ignore_changes = [
+      custom_data,
+    ]
+  }
 }
 
 data "azuredevops_project" "example" {
@@ -135,7 +141,7 @@ resource "azuredevops_variable_group" "terraform_outputs" {
   }
   variable {
     name = "subscription"
-    value = var.subscription
+    value = var.subscription_service_name
   }
 }
 
@@ -151,7 +157,14 @@ resource "azurerm_kubernetes_cluster" "example" {
     vm_size    = local.node_size
     auto_scaling_enabled = true
     max_count = var.profile == "dev" ? 1 : var.node_max_count
-    min_count = var.profile == "dev" ? 1 : var.node_min_count
+    min_count = var.profile == "dev" ? 1 : var.node_min_count    
+  }
+
+  linux_profile {
+    admin_username = var.user
+    ssh_key {
+      key_data = file("./ssh-keys/terraform-azure-aks-cluster.pub")
+    }
   }
 
   identity {
@@ -189,5 +202,26 @@ resource "azurerm_kubernetes_cluster_node_pool" "prod" {
 
   tags = {
     Environment = var.profile
+  }
+}
+
+data "azurerm_subscription" "current"{
+  subscription_id = var.subscription
+}
+
+resource "azuredevops_serviceendpoint_kubernetes" "aks_service_connection"{
+  depends_on = [ azurerm_kubernetes_cluster.example ]
+  project_id = data.azuredevops_project.example.id
+  service_endpoint_name = var.aks_service_name
+  apiserver_url = azurerm_kubernetes_cluster.example.kube_config[0].host
+  authorization_type = "AzureSubscription"
+
+  azure_subscription {
+    subscription_id = var.subscription
+    subscription_name = data.azurerm_subscription.current.display_name
+    tenant_id = data.azurerm_subscription.current.tenant_id
+    cluster_name = azurerm_kubernetes_cluster.example.name
+    resourcegroup_id = azurerm_resource_group.agent.name
+    cluster_admin = true
   }
 }
